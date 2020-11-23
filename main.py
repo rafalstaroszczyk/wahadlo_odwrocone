@@ -21,7 +21,7 @@ data[0, 4] = -3 / 2 * g / l * np.sin(phi0)
 for i in range(n-1):
     data[i + 1, 0:4] = data[i, 0:4] + np.array((1, dt, data[i, 3] * dt, data[i, 4] * dt))
     data[i + 1,  4] = epsilon(data[i, 1], data[i, 2])
-offset = np.zeros((n, 5))
-offset[:, 2] = np.pi
-data = offset - data
+offset = np.zeros((1, n))
+offset[:] = np.pi
+data[:, 2] = offset - data[:, 2]
 np.savetxt("data", data, fmt="%f")
