@@ -1,8 +1,8 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 def data_input():
-    offset_flag, symani = 0, 0
+    offset_flag, symani, hor_mov = 0, 0, 0
     while (True):
         try:
             f_prob = float(input("Podaj czestotliwosc probkowania [Hz]: "))
@@ -19,25 +19,35 @@ def data_input():
                 offset_flag = input("Czy zamienic phi na pi-phi? (y/n): ")
             while (symani != 'y' and symani != 'n'):  # wymuszenie y lub n
                 symani = input("Czy pokazac animacje symulacji? (y/n): ")
+            while (hor_mov != 'y' and hor_mov != 'n'):  # ruch poziomy
+                hor_mov = input("Czy pozwolic na ruch poziomy? (y/n): ")
             break
         except ValueError:
             print("Blad danych, sprobuj ponownie")
-    return f_prob, t, phi * np.pi / 180, omega * np.pi / 180, x, v, a, l, g, f, offset_flag, symani
+    return f_prob, t, phi * np.pi / 180, omega * np.pi / 180, x, v, a, l, g, f, offset_flag, symani, hor_mov
 
 
 def epsilon(phi, alfa, z):  # przyspieszenie pionowe
-    global a, f, g, l, dt
+    #global a, f, g, l, dt
     acc = np.array((alfa, 4 * np.pi ** 2 * f ** 2 * z - g))  # wektor przyspieszenia: w lewo, w gore
     return 3 / 2 * 1 / l * np.dot(acc, np.array((-np.cos(phi), np.sin(phi))))
 
 
 def alfa(phi, x, omega, z):  # przyspieszenie poziome
-    global f, g, l, alfa_prop
+    #global f, g, l, alfa_prop, hor_mov
+    """
     try:
         return alfa_prop * ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) - (l * omega ** 2) / (3 * phi - 3 * np.pi)) / np.cos(phi)
     except ZeroDivisionError:
         return 0
-    # return -alfa_prop * g * np.tan(phi)
+    """
+    if hor_mov == 'n':
+        return 0
+    else:
+        try:
+            return ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) - l * omega ** 2 / (3 * phi - 3 * np.arctan(x / 5))) / np.cos(phi)
+        except ZeroDivisionError:
+            return 0
 
 
 def sym_ani(index):  # animacja symulacji
@@ -55,7 +65,7 @@ def sym_ani(index):  # animacja symulacji
 
 
 def simulate():
-    global f_prob, t, n, phi0, omega0, x0, v0, a, l, g, f, data, symani
+    #global f_prob, t, n, phi0, omega0, x0, v0, a, l, g, f, data, symani
     # ustawianie wartosci poczatkowych
     data[0, 2] = phi0
     data[0, 3] = x0
@@ -84,11 +94,63 @@ def simulate():
             sym_ani(data[i, 0])
 
 
-"""
+def plot():
+    #global data
+    plt.subplot(311)
+    plt.plot(data[:, 1], data[:, 2], color='g', lw=1, ls='-', label='phi')
+    plt.legend()
+
+    plt.subplot(312)
+    plt.plot(data[:, 1], data[:, 4], color='g', lw=1, ls='-', label='omega')
+    plt.plot(omega_maxt, omega_maxx, color='r', lw=1, ls='-.')
+    plt.plot(omega_mint, omega_minx, color='r', lw=1, ls='-.')
+    plt.legend()
+
+    plt.subplot(313)
+    plt.plot(data[:, 1], data[:, 6], color='g', lw=1, ls='-', label='epsilon')
+    plt.plot(epsilon_maxt, epsilon_maxx, color='r', lw=1, ls='-.')
+    plt.plot(epsilon_mint, epsilon_minx, color='r', lw=1, ls='-.')
+    plt.legend()
+
+    plt.show()
+
+
+def local_max(t, x):
+    localmaxt = []
+    localmaxx =[]
+    temp1 = 0
+    for i in range(len(x)-1):
+        temp2 = x[i]
+        temp3 = x[i + 1]
+        if temp2 >= temp1 and temp2 >= temp3:
+            localmaxt.append(t[i])
+            localmaxx.append(x[i])
+            temp1 = x[i]
+        else:
+            temp1 = x[i]
+    return localmaxt, localmaxx
+
+
+def local_min(t, x):
+    localmint = []
+    localminx =[]
+    temp1 = 0
+    for i in range(len(x)-1):
+        temp2 = x[i]
+        temp3 = x[i + 1]
+        if temp2 <= temp1 and temp2 <= temp3:
+            localmint.append(t[i])
+            localminx.append(x[i])
+            temp1 = x[i]
+        else:
+            temp1 = x[i]
+    return localmint, localminx
+
+
 f_prob = 10000  # skok probkowania
-t = 10  # czas symulacji
+t = 1  # czas symulacji
 n = int(t * f_prob)  # ilosc probek
-phi0 = 0.99 * np.pi  # kat poczatkowy
+phi0 = 175 / 180 * np.pi  # kat poczatkowy
 omega0 = 0  # predkosc katowa poczatkowa
 x0 = 0  # polozenie poczatkowe poziome pktu obrotu
 v0 = 0  # predkosc poczatkowa pozioma pktu obrotu
@@ -98,14 +160,15 @@ g = 10  # przysp. grawitacyjne
 f = 100  # czestotliwosc drgan
 offset_flag = 'y'  # czy ma byc przesuniecie w phi
 symani = 'y'  # czy ma byc animacja symulacji
-"""
+hor_mov = 'n'  # czy ma byc ruch poziomy
 
-f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani = data_input()
-n = int(t * f_prob)
+
+#f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov = data_input()
+#n = int(t * f_prob)
 
 # te zmienne musza byc poza funkcja bo funkcje sa wywolywane wielokrotnie i wynik jest inny
 sym_state = 0  # czesc sym_ani(index)
-alfa_prop = 10  # czesc alfa()
+alfa_prop = 1  # czesc alfa()
 
 data = np.zeros((n, 9))
 """
@@ -127,3 +190,11 @@ else:
     header = '%8s%11s%11s%11s%11s%11s%11s%11s%11s' % ('i', 't', 'phi', 'x', 'omega', 'v', 'epsilon', 'alfa', 'z')
 
 np.savetxt("data", data, fmt="%10.5f", header=header)  # zapisywanie do pliku
+
+omega_maxt, omega_maxx = local_max(data[:, 1], data[:, 4])  # lista t i lista wartosci dla max
+omega_mint, omega_minx = local_min(data[:, 1], data[:, 4])  # lista t i lista wartosci dla min
+
+epsilon_maxt, epsilon_maxx = local_max(data[:, 1], data[:, 6])  # lista t i lista wartosci dla max
+epsilon_mint, epsilon_minx = local_min(data[:, 1], data[:, 6])  # lista t i lista wartosci dla min
+
+plot()
