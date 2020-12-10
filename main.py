@@ -22,54 +22,31 @@ def data_input():
                 symani = input("Czy pokazac animacje symulacji? (y/n): ")
             while (hor_mov != 'y' and hor_mov != 'n'):  # ruch poziomy
                 hor_mov = input("Czy pozwolic na ruch poziomy? (y/n): ")
+            data_to_plot = input("Wypisz dane do wyswietlenia (phi/omega/epsilon/x/v/alfa): ")
+            data_to_plot = data_to_plot.replace(',', ' ').replace('.', ' ').replace('/', ' ').replace(';', ' ').replace(
+                ':', ' ').split(' ')
+            data_to_plot = list(filter(None, data_to_plot))
+            data_to_plot = list(dict.fromkeys(data_to_plot))
             break
         except ValueError:
             print("Blad danych, sprobuj ponownie")
-    return f_prob, t, phi * np.pi / 180, omega * np.pi / 180, x, v, a, l, g, f, offset_flag, symani, hor_mov
+    return f_prob, t, phi * np.pi / 180, omega * np.pi / 180, x, v, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot
 
 
 def epsilon(phi, alfa, z):  # przyspieszenie pionowe
-    # global a, f, g, l, dt
     acc = np.array((alfa, 4 * np.pi ** 2 * f ** 2 * z - g))  # wektor przyspieszenia: w lewo, w gore
     return 3 / 2 * 1 / l * np.dot(acc, np.array((-np.cos(phi), np.sin(phi))))
 
 
 def alfa(phi, x, omega, z):  # przyspieszenie poziome
-    # global f, g, l, alfa_prop, hor_mov
-    #return 0
     # epsilon = kphi * (phit - phi) + komega * (0 - omega)
     kphi = 3
-    komega = 4  # dla komega ** 2<4 * kphi wystapia oscylacje
-    #if alfa_mode == 0:
-    #    try:
-    #        return ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) + 2 * l / 3 * (kphi * (phi - phit) + komega * omega)) / np.cos(phi)
-    #     except ZeroDivisionError:
-    #        return 0
-    #else:
+    komega = 4  # dla komega ** 2 < 4 * kphi wystapia oscylacje
     try:
-        return ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) + 2 * l / 3 * (kphi * (phi - phit) + komega * omega)) / np.cos(phi)
-     except ZeroDivisionError:
-        return 0
-    #elif alfa_mode == 1:  # phi = pi
-    #    try:
-    #
-    #    except ZeroDivisionError:
-    #        return 0
-    """
-    try:  # phi = const
-        return ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) - (l * omega ** 2) / (3 * phi - 3 * np.pi)) / np.cos(phi)
+        return ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) + 2 * l / 3 * (
+                kphi * (phi - phit) + komega * omega)) / np.cos(phi)
     except ZeroDivisionError:
         return 0
-    
-    if hor_mov == 'n':
-        return 0
-    else:
-        try:
-            return ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) - l * omega ** 2 / (
-                        3 * phi - 3 * np.arctan(x / 5))) / np.cos(phi)
-        except ZeroDivisionError:
-            return 0
-    """
 
 
 def sym_ani(index):  # animacja symulacji
@@ -87,7 +64,7 @@ def sym_ani(index):  # animacja symulacji
 
 
 def simulate():
-    # global f_prob, t, n, phi0, omega0, x0, v0, a, l, g, f, data, symani
+    global phit
     # ustawianie wartosci poczatkowych
     data[0, 2] = phi0
     data[0, 3] = x0
@@ -113,47 +90,26 @@ def simulate():
         alfa = alfa(phi)
         z = a * sin(2 * pi * f * t)
         """
+        if data[i + 1, 5] >= vt:
+            phit = np.pi
         if symani == 'y':
             sym_ani(data[i, 0])
 
 
 def plot():
-    # global data
     dict = {"i": 0, "t": 1, "phi": 2, "x": 3, "omega": 4, "v": 5, "epsilon": 6, "alfa": 7, "z": 8}
     for i in range(number_of_plots):
-        plt.subplot(number_of_plots, 1, i+1)
+        plt.subplot(number_of_plots, 1, i + 1)
+        # wyswietla dane
         plt.plot(data[:, 1], data[:, dict[data_to_plot[i]]], color='g', lw=1, ls='-', label=data_to_plot[i])
-        plt.plot(local_max(data[:, 1], data[:, dict[data_to_plot[i]]])[0], local_max(data[:, 1], data[:, dict[data_to_plot[i]]])[1], color='r', lw=1, ls='-.')
-        plt.plot(local_min(data[:, 1], data[:, dict[data_to_plot[i]]])[0], local_min(data[:, 1], data[:, dict[data_to_plot[i]]])[1], color='r', lw=1, ls='-.')
+        # wyswietla max i min
+        plt.plot(local_max(data[:, 1], data[:, dict[data_to_plot[i]]])[0],
+                 local_max(data[:, 1], data[:, dict[data_to_plot[i]]])[1], color='r', lw=1, ls='-.')
+        plt.plot(local_min(data[:, 1], data[:, dict[data_to_plot[i]]])[0],
+                 local_min(data[:, 1], data[:, dict[data_to_plot[i]]])[1], color='r', lw=1, ls='-.')
+
         plt.legend(loc='lower left')
     plt.show()
-    """
-    plt.subplot(411)
-    plt.plot(data[:, 1], data[:, 2], color='g', lw=1, ls='-', label='phi')
-    # plt.plot(phi_maxt, phi_maxx, color='r', lw=1, ls='-.')
-    # plt.plot(phi_mint, phi_minx, color='r', lw=1, ls='-.')
-    plt.legend()
-
-    plt.subplot(412)
-    plt.plot(data[:, 1], data[:, 4], color='g', lw=1, ls='-', label='omega')
-    plt.plot(omega_maxt, omega_maxx, color='r', lw=1, ls='-.')
-    plt.plot(omega_mint, omega_minx, color='r', lw=1, ls='-.')
-    plt.legend()
-
-    plt.subplot(413)
-    plt.plot(data[:, 1], data[:, 6], color='g', lw=1, ls='-', label='epsilon')
-    plt.plot(epsilon_maxt, epsilon_maxx, color='r', lw=1, ls='-.')
-    plt.plot(epsilon_mint, epsilon_minx, color='r', lw=1, ls='-.')
-    plt.legend()
-
-    plt.subplot(414)
-    plt.plot(data[:, 1], data[:, 3], color='g', lw=1, ls='-', label='x')
-    plt.plot(x_maxt, x_maxx, color='r', lw=1, ls='-.')
-    plt.plot(x_mint, x_minx, color='r', lw=1, ls='-.')
-    plt.legend()
-
-    plt.show()
-"""
 
 
 def local_max(t, x):
@@ -161,15 +117,15 @@ def local_max(t, x):
     localmaxx = []
     temp1 = 0
     for i in range(len(x) - 1):
-        temp2 = x[i]
-        temp3 = x[i + 1]
-        if temp2 >= temp1 and temp2 >= temp3:
+        temp2 = x[i]  # przesuniecie "testu"
+        temp3 = x[i + 1]  # przesuniecie "testu"
+        if temp2 >= temp1 and temp2 >= temp3:  # jesli jest w max lokalnym dodaje do listy
             localmaxt.append(t[i])
             localmaxx.append(x[i])
-            temp1 = x[i]
+            temp1 = x[i]  # przesuniecie "testu"
         else:
-            temp1 = x[i]
-    return localmaxt, localmaxx
+            temp1 = x[i]  # przesuniecie "testu"
+    return localmaxt, localmaxx  # lista wartosci t i lista wartosci funkcji
 
 
 def local_min(t, x):
@@ -177,20 +133,20 @@ def local_min(t, x):
     localminx = []
     temp1 = 0
     for i in range(len(x) - 1):
-        temp2 = x[i]
-        temp3 = x[i + 1]
-        if temp2 <= temp1 and temp2 <= temp3:
+        temp2 = x[i]  # przesuniecie "testu"
+        temp3 = x[i + 1]  # przesuniecie "testu"
+        if temp2 <= temp1 and temp2 <= temp3:  # jesli jest w min lokalnym dodaje do listy
             localmint.append(t[i])
             localminx.append(x[i])
-            temp1 = x[i]
+            temp1 = x[i]  # przesuniecie "testu"
         else:
-            temp1 = x[i]
-    return localmint, localminx
+            temp1 = x[i]  # przesuniecie "testu"
+    return localmint, localminx  # lista wartosci t i lista wartosci funkcji
 
 
-
+"""
 f_prob = 10000  # skok probkowania
-t = 10  # czas symulacji
+t = 100  # czas symulacji
 n = int(t * f_prob)  # ilosc probek
 phi0 = 175 / 180 * np.pi  # kat poczatkowy
 omega0 = - 10 /180 * np.pi  # predkosc katowa poczatkowa
@@ -203,14 +159,15 @@ f = 0  # czestotliwosc drgan
 offset_flag = 'y'  # czy ma byc przesuniecie w phi
 symani = 'y'  # czy ma byc animacja symulacji
 hor_mov = 'y'  # czy ma byc ruch poziomy
-
-# f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov = data_input()
-# n = int(t * f_prob)
+data_to_plot = ["phi", "omega", "epsilon", "x", "v", "alfa"]
+"""
+f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot = data_input()
+n = int(t * f_prob)  #liczba probek
+vt = 50  # predkosc po ktorej nastepuje ustawienie pionowe
 
 # te zmienne musza byc poza funkcja bo funkcje sa wywolywane wielokrotnie i wynik jest inny
 sym_state = 0  # czesc sym_ani(index)
-alfa_prop = 10  # czesc alfa()
-phit = np.pi  # kat docelowy
+phit = 175 / 180 * np.pi  # kat docelowy
 
 data = np.zeros((n, 9))
 """
@@ -224,16 +181,15 @@ data[:, 6] = epsilon - przysp. katowe
 data[:, 7] = alfa - przysp. poziome pkt. obrotu
 data[:, 8] = z - pol. pionowe pktu obrotu
 """
+
 simulate()
-if offset_flag == 'y':  # inne oznaczenia w pliku: phi i pi - pih
+
+if offset_flag == 'y':  # inne oznaczenia w pliku: phi i pi - phi
     data[:, 2] = np.ones((1, n)) * np.pi - data[:, 2]  # kat od OZ w prawo
     header = '%8s%11s%11s%11s%11s%11s%11s%11s%11s' % ('i', 't', 'pi-phi', 'x', 'omega', 'v', 'epsilon', 'alfa', 'z')
 else:
     header = '%8s%11s%11s%11s%11s%11s%11s%11s%11s' % ('i', 't', 'phi', 'x', 'omega', 'v', 'epsilon', 'alfa', 'z')
-
 np.savetxt("data", data, fmt="%10.5f", header=header)  # zapisywanie do pliku
 
-data_to_plot = ["phi", "omega", "epsilon", "x", "v", "alfa"]
 number_of_plots = len(data_to_plot)
-
 plot()
