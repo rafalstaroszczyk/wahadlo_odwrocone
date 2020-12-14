@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as ani
 
 
-def data_input():
-    offset_flag, symani, hor_mov = 0, 0, 0
+def data_input():  # wejscie danych
+    offset_flag, symani, hor_mov = 0, 0, 0  # deklaracja zmiennych
     while (True):
         try:
             f_prob = float(input("Podaj czestotliwosc probkowania [Hz]: "))
@@ -23,12 +23,13 @@ def data_input():
                 symani = input("Czy pokazac animacje symulacji? (y/n): ")
             while (hor_mov != 'y' and hor_mov != 'n'):  # ruch poziomy
                 hor_mov = input("Czy pozwolic na ruch poziomy? (y/n): ")
+            all_data_to_plot = ["phi", "omega", "epsilon", "x", "v", "alfa"]  # lista dozwolonych danych
             data_to_plot = input("Wypisz dane do wyswietlenia (phi/omega/epsilon/x/v/alfa): ")
             data_to_plot = data_to_plot.replace(',', ' ').replace('.', ' ').replace('/', ' ').replace(';', ' ').replace(
-                ':', ' ').split(' ')
-            data_to_plot = list(filter(None, data_to_plot))
-            data_to_plot = list(dict.fromkeys(data_to_plot))
-
+                ':', ' ').split(' ')  # zamiana ',', '.', '/', ';', ':' na ' '
+            data_to_plot = list(filter(None, data_to_plot))  # usuwanie pustych elementow listy
+            data_to_plot = list(dict.fromkeys(data_to_plot))  # usuwanie duplikatow
+            data_to_plot = [item for item in data_to_plot if item in all_data_to_plot]  # filtrowanie danych
             vt = float(input("Podaj predkosc wyprostowania [m/s]: "))
             f_anim = float(input("Podaj czestotliwosc animacji: "))
             break
@@ -37,7 +38,7 @@ def data_input():
     return f_prob, t, phi * np.pi / 180, omega * np.pi / 180, x, v, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim
 
 
-def epsilon(phi, alfa, z):  # przyspieszenie pionowe
+def epsilon(phi, alfa, z):  # przyspieszenie katowe
     acc = np.array((alfa, 4 * np.pi ** 2 * f ** 2 * z - g))  # wektor przyspieszenia: w lewo, w gore
     return 3 / 2 * 1 / l * np.dot(acc, np.array((-np.cos(phi), np.sin(phi))))
 
@@ -47,38 +48,25 @@ def alfa(phi, v, omega, z):  # przyspieszenie poziome
     kphi = 3
     komega = 4  # dla komega ** 2 < 4 * kphi wystapia oscylacje
     if hor_mov == 'y':
-        if alfa_mode == 0:
-            try:
-                return ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) + 2 * l / 3 * (
-                        kphi * (phi - phit) + komega * omega)) / np.cos(phi)
-            except ZeroDivisionError:
-                return 0
-        else:
-            try:
-                return 100 - v
-            except ZeroDivisionError:
-                return 0
+        try:
+            return ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) + 2 * l / 3 * (
+                    kphi * (phi - phit) + komega * omega)) / np.cos(phi)
+        except ZeroDivisionError:
+            return 0
     else:
         return 0
 
 
-def sym_ani(index):  # animacja symulacji
+def sym_ani(index):  # pokazanie % symulacji
     global sym_state
-    if index % 10000 == 0:
-        if sym_state == 0:
-            print("Symulowanie.")
-            sym_state = 1
-        elif sym_state == 1:
-            print("Symulowanie..")
-            sym_state = 2
-        elif sym_state == 2:
-            print("Symulowanie...")
-            sym_state = 0
+    if 100 * index % n == 0:
+        print("%3i%%" % sym_state)
+        sym_state += 1
 
 
-def plot():
-    number_of_plots = len(data_to_plot)
-    dict = {"i": 0, "t": 1, "phi": 2, "x": 3, "omega": 4, "v": 5, "epsilon": 6, "alfa": 7, "z": 8}
+def plot():  # wyswietlanie wykresow
+    number_of_plots = len(data_to_plot)  # ilosc podwykresow
+    dict = {"i": 0, "t": 1, "phi": 2, "x": 3, "omega": 4, "v": 5, "epsilon": 6, "alfa": 7, "z": 8}  # kolumna w dane
     for i in range(number_of_plots):
         plt.subplot(number_of_plots, 1, i + 1)
         # wyswietla dane
@@ -125,8 +113,8 @@ def local_min(t, x):
 
 
 def init():
-    ax.set_xlim(-1.5, 1.5)
-    ax.set_ylim(-1.5, 1.5)
+    ax.set_xlim(-1.5 * l, 1.5 * l)
+    ax.set_ylim(-1.5 * l, 1.5 * l)
     return line,
 
 
@@ -180,29 +168,28 @@ def simulate():
         """
         if hor_mov == 'y' and [i + 1, 5] >= vt:
             phit = np.pi
-            #alfa_mode = 1
         if symani == 'y':
             sym_ani(data[i, 0])
 
 
 
 f_prob = 100000  # skok probkowania
-t = 1  # czas symulacji
+t = 2  # czas symulacji
 n = int(t * f_prob)  # ilosc probek
-phi0 = 10 / 180 * np.pi  # kat poczatkowy
+phi0 = 150 / 180 * np.pi  # kat poczatkowy
 omega0 = 0  # predkosc katowa poczatkowa
 x0 = 0  # polozenie poczatkowe poziome pktu obrotu
 v0 = 0  # predkosc poczatkowa pozioma pktu obrotu
-a = 0  # amplituda drgan
+a = 0.05  # amplituda drgan
 l = 1  # dlugosc wahadla
 g = 10  # przysp. grawitacyjne
-f = 0  # czestotliwosc drgan
+f = 100  # czestotliwosc drgan
 offset_flag = 'y'  # czy ma byc przesuniecie w phi
 symani = 'y'  # czy ma byc animacja symulacji
 hor_mov = 'n'  # czy ma byc ruch poziomy
-data_to_plot = ["phi", "omega", "epsilon", "x", "v", "alfa"]
+data_to_plot = ["phi", "omega", "epsilon"]#, "x", "v", "alfa"]
 vt = 5  # predkosc po ktorej nastepuje ustawienie pionowe
-f_anim = 100
+f_anim = 1000
 """
 f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim = data_input()
 n = int(t * f_prob)  #liczba probek
@@ -211,7 +198,6 @@ n = int(t * f_prob)  #liczba probek
 # te zmienne musza byc poza funkcja bo funkcje sa wywolywane wielokrotnie i wynik jest inny
 sym_state = 0  # czesc sym_ani(index)
 phit = 175 / 180 * np.pi  # kat docelowy
-alfa_mode = 0
 
 data = np.zeros((n, 9))
 plot_data = np.zeros((n, 9))
@@ -229,6 +215,7 @@ data[:, 8] = z - pol. pionowe pktu obrotu
 """
 
 simulate()
+print("%3i%%" % sym_state)
 plot_data[:, :] = data[:, :]
 
 if offset_flag == 'y':  # inne oznaczenia w pliku: phi i pi - phi
