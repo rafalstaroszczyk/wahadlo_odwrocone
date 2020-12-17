@@ -4,19 +4,25 @@ import matplotlib.animation as ani
 
 
 def data_input():  # wejscie danych
-    offset_flag, symani, hor_mov = 0, 0, 0  # deklaracja zmiennych
+    f_prob, t, a, l, g, f, offset_flag, symani, hor_mov, f_anim, wsp_tar, m = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  # deklaracja zmiennych
     while (True):
         try:
-            f_prob = float(input("Podaj czestotliwosc probkowania [Hz]: "))
-            t = float(input("Podaj czas symulacji [s]: "))
+            while f_prob <= 0:
+                f_prob = float(input("Podaj czestotliwosc probkowania [Hz]: "))
+            while t <= 0:
+                t = float(input("Podaj czas symulacji [s]: "))
             phi = float(input("Podaj kat poczatkowy [st.]: "))
             omega = float(input("Podaj poczatkowa predkosc katowa [st./s]: "))
             x = float(input("Podaj poczatkowe polozenie punktu obrotu [m]: "))
             v = float(input("Podaj poczatkowa predkosc punktu obrotu [m/s]: "))
-            a = float(input("Podaj amplitude drgan [m]: "))
-            l = float(input("Podaj dlugosc wahadla [m]: "))
-            g = float(input("Podaj przyspieszenie ziemskie [m/s^2]: "))
-            f = float(input("Podaj czestotliwosc drgan [Hz]: "))
+            while a < 0:
+                a = float(input("Podaj amplitude drgan [m]: "))
+            while l <= 0:
+                l = float(input("Podaj dlugosc wahadla [m]: "))
+            while g <= 0:
+                g = float(input("Podaj przyspieszenie ziemskie [m/s^2]: "))
+            while f <= 0:
+                f = float(input("Podaj czestotliwosc drgan [Hz]: "))
             while (offset_flag != 'y' and offset_flag != 'n'):  # wymuszenie y lub n
                 offset_flag = input("Czy zamienic phi na pi-phi? (y/n): ")
             while (symani != 'y' and symani != 'n'):  # wymuszenie y lub n
@@ -31,16 +37,22 @@ def data_input():  # wejscie danych
             data_to_plot = list(dict.fromkeys(data_to_plot))  # usuwanie duplikatow
             data_to_plot = [item for item in data_to_plot if item in all_data_to_plot]  # filtrowanie danych
             vt = float(input("Podaj predkosc wyprostowania [m/s]: "))
-            f_anim = float(input("Podaj czestotliwosc animacji: "))
+            while f_anim <= 0:
+                f_anim = float(input("Podaj czestotliwosc animacji: "))
+            while wsp_tar < 0:
+                wsp_tar = float(input("Podaj wspolczynnik tarcia: "))
+            while m < 0:
+                m = float(input("Podaj mase wahadla [kg]: "))
             break
         except ValueError:
             print("Blad danych, sprobuj ponownie")
     return f_prob, t, phi * np.pi / 180, omega * np.pi / 180, x, v, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim
 
 
-def epsilon(phi, alfa, z):  # przyspieszenie katowe
+def epsilon(t, phi, omega, v, alfa, z):  # przyspieszenie katowe
     acc = np.array((alfa, 4 * np.pi ** 2 * f ** 2 * z - g))  # wektor przyspieszenia: w lewo, w gore
-    return 3 / 2 * 1 / l * np.dot(acc, np.array((-np.cos(phi), np.sin(phi))))
+    #frict = np.array(v, 2 * np.pi * f * t * a * np.cos(2 * np.pi * f * t))
+    return 3 / 2 * 1 / l * np.dot(acc, np.array((-np.cos(phi), np.sin(phi)))) - 3 * wsp_tar * omega / 4 / m# - 3 * wsp_tar / (2 * m * l) * np.dot(frict, np.array(np.cos(phi), np.sin(phi)))
 
 
 def alfa(phi, v, omega, z):  # przyspieszenie poziome
@@ -72,10 +84,16 @@ def plot():  # wyswietlanie wykresow
         # wyswietla dane
         plt.plot(plot_data[:, 1], plot_data[:, dict[data_to_plot[i]]], color='g', lw=1, ls='-', label=data_to_plot[i])
         # wyswietla max i min
-        plt.plot(local_max(plot_data[:, 1], plot_data[:, dict[data_to_plot[i]]])[0],
-                 local_max(plot_data[:, 1], plot_data[:, dict[data_to_plot[i]]])[1], color='r', lw=1, ls='-.')
-        plt.plot(local_min(plot_data[:, 1], plot_data[:, dict[data_to_plot[i]]])[0],
-                 local_min(plot_data[:, 1], plot_data[:, dict[data_to_plot[i]]])[1], color='r', lw=1, ls='-.')
+        localmax0 = local_max(plot_data[:, 1], plot_data[:, dict[data_to_plot[i]]])[0]
+        localmax1 = local_max(plot_data[:, 1], plot_data[:, dict[data_to_plot[i]]])[1]
+        localmin0 = local_min(plot_data[:, 1], plot_data[:, dict[data_to_plot[i]]])[0]
+        localmin1 = local_min(plot_data[:, 1], plot_data[:, dict[data_to_plot[i]]])[1]
+
+        plt.plot(localmax0, localmax1, color='r', lw=1, ls='-.')
+        plt.plot(localmin0, localmin1, color='r', lw=1, ls='-.')
+
+        plt.plot(local_max(localmax0, localmax1)[0], local_max(localmax0, localmax1)[1], color='b', lw=1, ls=':')
+        plt.plot(local_min(localmin0, localmin1)[0], local_min(localmin0, localmin1)[1], color='b', lw=1, ls=':')
 
         plt.legend(loc='lower left')
 
@@ -147,51 +165,53 @@ def simulate():
     data[0, 5] = v0
     data[0, 8] = 0
     data[0, 7] = alfa(data[0, 2], data[0, 5], data[0, 4], data[0, 8])
-    data[0, 6] = epsilon(data[0, 2], data[0, 7], data[0, 8])
+    data[0, 6] = epsilon(data[0, 1], data[0, 2], data[0, 4], data[0, 5], data[0, 7], data[0, 8])
     for i in range(n - 1):
         data[i + 1, 0:2] = data[i, 0:2] + np.array((1, 1 / f_prob))
         data[i + 1, 8] = a * np.sin(2 * np.pi * f * data[i + 1, 1])
         data[i + 1, 7] = alfa(data[i, 2], data[i, 5], data[i, 4], data[i, 8])
-        data[i + 1, 6] = epsilon(data[i, 2], data[i, 7], data[i, 8])
+        data[i + 1, 6] = epsilon(data[i, 1], data[i, 2], data[i, 4], data[i, 5], data[i, 7], data[i, 8])
         data[i + 1, 4:6] = data[i, 4:6] + np.array(((data[i, 6] + data[i + 1, 6]) / (2 * f_prob), (data[i, 7] + data[i + 1, 7]) / (2 * f_prob)))
         data[i + 1, 2:4] = data[i, 2:4] + np.array(((data[i, 4] + data[i + 1, 4]) / (2 * f_prob), (data[i, 5] + data[i + 1, 5]) / (2 * f_prob)))
         """
         i += 1
         t += dt
-        phi += omega * dt
-        x += v * dt
-        omega += epsilon * dt
-        v += alfa * dt
-        epsilon = epsilon(phi, alfa, z)
-        alfa = alfa(phi)
         z = a * sin(2 * pi * f * t)
+        alfa = alfa(phi)
+        epsilon = epsilon(phi, alfa, z)
+        omega[i+1] += ( epsilon[i] + epsilon[i + 1]) / 2 * dt
+        v[i + 1] += (alfa[i] + alfa[i + 1]) / 2 * dt
+        phi[i + 1] += (omega[i] + omega[i + 1]) / 2 * dt
+        x[i + 1] += (v[i] + v[i + 1]) / 2 * dt
         """
-        if hor_mov == 'y' and [i + 1, 5] >= vt:
+        if hor_mov == 'y' and data[i + 1, 5] >= vt:
             phit = np.pi
         if symani == 'y':
             sym_ani(data[i, 0])
 
 
 
-f_prob = 100000  # skok probkowania
-t = 2  # czas symulacji
+f_prob = 1000  # skok probkowania
+t = 5  # czas symulacji
 n = int(t * f_prob)  # ilosc probek
 phi0 = 150 / 180 * np.pi  # kat poczatkowy
 omega0 = 0  # predkosc katowa poczatkowa
 x0 = 0  # polozenie poczatkowe poziome pktu obrotu
 v0 = 0  # predkosc poczatkowa pozioma pktu obrotu
-a = 0.05  # amplituda drgan
+a = 0.03  # amplituda drgan
 l = 1  # dlugosc wahadla
 g = 10  # przysp. grawitacyjne
-f = 100  # czestotliwosc drgan
+f = 50  # czestotliwosc drgan
 offset_flag = 'y'  # czy ma byc przesuniecie w phi
 symani = 'y'  # czy ma byc animacja symulacji
 hor_mov = 'n'  # czy ma byc ruch poziomy
-data_to_plot = ["phi", "omega", "epsilon"]#, "x", "v", "alfa"]
-vt = 5  # predkosc po ktorej nastepuje ustawienie pionowe
-f_anim = 1000
+data_to_plot = ["phi", "omega", "epsilon", "x", "v", "alfa"]
+vt = 10  # predkosc po ktorej nastepuje ustawienie pionowe
+f_anim = 60
+wsp_tar = 0.1
+m = 0.2
 """
-f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim = data_input()
+f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim, wsp_tar, m = data_input()
 n = int(t * f_prob)  #liczba probek
 """
 
@@ -213,6 +233,8 @@ data[:, 6] = epsilon - przysp. katowe
 data[:, 7] = alfa - przysp. poziome pkt. obrotu
 data[:, 8] = z - pol. pionowe pktu obrotu
 """
+if hor_mov == 'y':
+    wsp_tar = 0
 
 simulate()
 print("%3i%%" % sym_state)
