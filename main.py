@@ -49,13 +49,12 @@ def data_input():  # wejscie danych
     return f_prob, t, phi * np.pi / 180, omega * np.pi / 180, x, v, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim
 
 
-def epsilon(t, phi, omega, v, alfa, z):  # przyspieszenie katowe
+def epsilon(phi, omega, alfa, z):  # przyspieszenie katowe
     acc = np.array((alfa, 4 * np.pi ** 2 * f ** 2 * z - g))  # wektor przyspieszenia: w lewo, w gore
-    #frict = np.array(v, 2 * np.pi * f * t * a * np.cos(2 * np.pi * f * t))
-    return 3 / 2 * 1 / l * np.dot(acc, np.array((-np.cos(phi), np.sin(phi)))) - 3 * wsp_tar * omega / 4 / m# - 3 * wsp_tar / (2 * m * l) * np.dot(frict, np.array(np.cos(phi), np.sin(phi)))
+    return 3 / 2 * 1 / l * np.dot(acc, np.array((-np.cos(phi), np.sin(phi)))) - 3 * wsp_tar * omega / 4 / m
 
 
-def alfa(phi, v, omega, z):  # przyspieszenie poziome
+def alfa(phi, omega, z):  # przyspieszenie poziome
     # epsilon = kphi * (phit - phi) + komega * (0 - omega)
     kphi = 3
     komega = 4  # dla komega ** 2 < 4 * kphi wystapia oscylacje
@@ -164,13 +163,13 @@ def simulate():
     data[0, 4] = omega0
     data[0, 5] = v0
     data[0, 8] = 0
-    data[0, 7] = alfa(data[0, 2], data[0, 5], data[0, 4], data[0, 8])
-    data[0, 6] = epsilon(data[0, 1], data[0, 2], data[0, 4], data[0, 5], data[0, 7], data[0, 8])
+    data[0, 7] = alfa(data[0, 2], data[0, 4], data[0, 8])
+    data[0, 6] = epsilon(data[0, 2], data[0, 4], data[0, 7], data[0, 8])
     for i in range(n - 1):
         data[i + 1, 0:2] = data[i, 0:2] + np.array((1, 1 / f_prob))
         data[i + 1, 8] = a * np.sin(2 * np.pi * f * data[i + 1, 1])
-        data[i + 1, 7] = alfa(data[i, 2], data[i, 5], data[i, 4], data[i, 8])
-        data[i + 1, 6] = epsilon(data[i, 1], data[i, 2], data[i, 4], data[i, 5], data[i, 7], data[i, 8])
+        data[i + 1, 7] = alfa(data[i, 2], data[i, 4], data[i, 8])
+        data[i + 1, 6] = epsilon(data[i, 2], data[i, 4], data[i, 7], data[i, 8])
         data[i + 1, 4:6] = data[i, 4:6] + np.array(((data[i, 6] + data[i + 1, 6]) / (2 * f_prob), (data[i, 7] + data[i + 1, 7]) / (2 * f_prob)))
         data[i + 1, 2:4] = data[i, 2:4] + np.array(((data[i, 4] + data[i + 1, 4]) / (2 * f_prob), (data[i, 5] + data[i + 1, 5]) / (2 * f_prob)))
         """
@@ -190,9 +189,9 @@ def simulate():
             sym_ani(data[i, 0])
 
 
-
-f_prob = 1000  # skok probkowania
-t = 5  # czas symulacji
+"""
+f_prob = 100000  # skok probkowania
+t = 10  # czas symulacji
 n = int(t * f_prob)  # ilosc probek
 phi0 = 150 / 180 * np.pi  # kat poczatkowy
 omega0 = 0  # predkosc katowa poczatkowa
@@ -213,11 +212,11 @@ m = 0.2
 """
 f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim, wsp_tar, m = data_input()
 n = int(t * f_prob)  #liczba probek
-"""
+
 
 # te zmienne musza byc poza funkcja bo funkcje sa wywolywane wielokrotnie i wynik jest inny
 sym_state = 0  # czesc sym_ani(index)
-phit = 175 / 180 * np.pi  # kat docelowy
+phit = phi0  # kat docelowy
 
 data = np.zeros((n, 9))
 plot_data = np.zeros((n, 9))
