@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def plot():  # wyswietlanie wykresow
+def plot(plot_data, data_to_plot):  # wyswietlanie wykresow
     number_of_plots = len(data_to_plot)  # ilosc podwykresow
     dict = {"i": 0, "t": 1, "phi": 2, "x": 3, "omega": 4, "v": 5, "epsilon": 6, "alfa": 7, "z": 8}  # kolumna w dane
     for i in range(number_of_plots):

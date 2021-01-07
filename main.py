@@ -46,7 +46,7 @@ def data_input():  # wejscie danych
             break
         except ValueError:
             print("Blad danych, sprobuj ponownie")
-    return f_prob, t, phi * np.pi / 180, omega * np.pi / 180, x, v, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim
+    return f_prob, t, phi * np.pi / 180, omega * np.pi / 180, x, v, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim, wsp_tar, m
 
 
 def epsilon(phi, omega, alfa, z):  # przyspieszenie katowe
@@ -60,8 +60,13 @@ def alfa(phi, omega, z):  # przyspieszenie poziome
     komega = 4  # dla komega ** 2 < 4 * kphi wystapia oscylacje
     if hor_mov == 'y':
         try:
-            return ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) + 2 * l / 3 * (
-                    kphi * (phi - phit) + komega * omega)) / np.cos(phi)
+            przysp = ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) + 2 * l / 3 * (kphi * (phi - phit) + komega * omega)) / np.cos(phi)
+            if przysp > 50:
+                return 50
+            elif przysp < -50:
+                return -50
+            else:
+                return ((4 * np.pi ** 2 * f ** 2 * z - g) * np.sin(phi) + 2 * l / 3 * (kphi * (phi - phit) + komega * omega)) / np.cos(phi)
         except ZeroDivisionError:
             return 0
     else:
@@ -189,30 +194,97 @@ def simulate():
             sym_ani(data[i, 0])
 
 
-"""
-f_prob = 100000  # skok probkowania
-t = 10  # czas symulacji
-n = int(t * f_prob)  # ilosc probek
-phi0 = 150 / 180 * np.pi  # kat poczatkowy
-omega0 = 0  # predkosc katowa poczatkowa
-x0 = 0  # polozenie poczatkowe poziome pktu obrotu
-v0 = 0  # predkosc poczatkowa pozioma pktu obrotu
-a = 0.03  # amplituda drgan
-l = 1  # dlugosc wahadla
-g = 10  # przysp. grawitacyjne
-f = 50  # czestotliwosc drgan
-offset_flag = 'y'  # czy ma byc przesuniecie w phi
-symani = 'y'  # czy ma byc animacja symulacji
-hor_mov = 'n'  # czy ma byc ruch poziomy
-data_to_plot = ["phi", "omega", "epsilon", "x", "v", "alfa"]
-vt = 10  # predkosc po ktorej nastepuje ustawienie pionowe
-f_anim = 60
-wsp_tar = 0.1
-m = 0.2
-"""
-f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim, wsp_tar, m = data_input()
-n = int(t * f_prob)  #liczba probek
+def zestaw1 ():
+    f_prob = 100000
+    t = 5
+    phi0 = 150 / 180 * np.pi
+    omega0 = 0
+    x0 = 0
+    v0 = 0
+    a = 0.03
+    l = 1
+    g = 10
+    f = 60
+    offset_flag = 'y'
+    symani = 'y'
+    hor_mov = 'n'
+    data_to_plot = ["phi", "omega", "epsilon"]
+    vt = 0
+    f_anim = 50
+    wsp_tar = 0
+    m = 1
+    return f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim, wsp_tar, m
 
+
+def zestaw2 ():
+    f_prob = 100000
+    t = 5
+    phi0 = 150 / 180 * np.pi
+    omega0 = 0
+    x0 = 0
+    v0 = 0
+    a = 0.03
+    l = 1
+    g = 10
+    f = 60
+    offset_flag = 'y'
+    symani = 'y'
+    hor_mov = 'n'
+    data_to_plot = ["phi", "omega", "epsilon"]
+    vt = 0
+    f_anim = 50
+    wsp_tar = 0.1
+    m = 0.2
+    return f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim, wsp_tar, m
+
+
+def zestaw3 ():
+    f_prob = 100000
+    t = 5
+    phi0 = 50 / 180 * np.pi
+    omega0 = 0
+    x0 = 0
+    v0 = 0
+    a = 0
+    l = 1
+    g = 10
+    f = 0
+    offset_flag = 'n'
+    symani = 'y'
+    hor_mov = 'n'
+    data_to_plot = ["phi", "omega", "epsilon"]
+    vt = 0
+    f_anim = 50
+    wsp_tar = 0
+    m = 1
+    return f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim, wsp_tar, m
+
+
+def zestaw4 ():
+    f_prob = 100000
+    t = 10
+    phi0 = 150 / 180 * np.pi
+    omega0 = -10 / 180 * np.pi
+    x0 = 0
+    v0 = 0
+    a = 0
+    l = 1
+    g = 10
+    f = 0
+    offset_flag = 'y'
+    symani = 'y'
+    hor_mov = 'y'
+    data_to_plot = ["phi", "omega", "epsilon", "x", "v", "alfa"]
+    vt = 10
+    f_anim = 50
+    wsp_tar = 0
+    m = 1
+    return f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim, wsp_tar, m
+
+
+#f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim, wsp_tar, m = data_input()
+f_prob, t, phi0, omega0, x0, v0, a, l, g, f, offset_flag, symani, hor_mov, data_to_plot, vt, f_anim, wsp_tar, m = zestaw4 ()
+n = int(t * f_prob)  #liczba probek
 
 # te zmienne musza byc poza funkcja bo funkcje sa wywolywane wielokrotnie i wynik jest inny
 sym_state = 0  # czesc sym_ani(index)
